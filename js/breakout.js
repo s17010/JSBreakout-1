@@ -1,15 +1,21 @@
 window.addEventListener('DOMContentLoaded', () => {
     console.log("breakout initializing...");
-    // 定数値
-    const DRAW_INTERVAL = 1000 / 60;
-    const PADDLE_WIDTH = 100;
-    const PADDLE_HEIGHT = 10;
-    const PADDLE_COLOR = '#4169e1';     // royalblue
 
     // 初期化
     const canvas = document.getElementById('board');
-    const breakout = new Breakout(canvas, DRAW_INTERVAL,
-        PADDLE_WIDTH, PADDLE_HEIGHT, PADDLE_COLOR);
+    new Breakout({
+        canvas: canvas,
+        interval: 1000 / 60,    // 60 FPS
+        paddle: {
+            width: 100,
+            height: 10,
+            color: '#4169e1'    // 'royalblue'
+        },
+        ball: {
+            radius: 5,
+            color: 'white'      // '#FFffFF'
+        }
+    });
 });
 
 class Breakout {
@@ -29,18 +35,35 @@ class Breakout {
         return Breakout.gameHight;
     }
 
-    constructor(canvas, interval, pw, ph, pc) {
-        this.canvas = canvas;
+    constructor(options) {
+        // 受け取ったパラメータをプロパティに保存
+        this.canvas = options.canvas;
         this.context = this.canvas.getContext('2d');
+        // ゲーム画面のサイズを取得
+        Breakout.width = this.canvas.width;
+        Breakout.height = this.canvas.height;
+
+        // 内部で使用するプロパティの初期化
         this.leftKey = false;
         this.rightKey = false;
-        Breakout.width = canvas.width;
-        Breakout.height = canvas.height;
-        this.paddle = new Paddle(pw, ph, pc);
+
+        // Paddleの初期化
+        this.paddle = new Paddle(
+            options.paddle.width,
+            options.paddle.height,
+            options.paddle.color);
+
         this.paddle.setPosition(Breakout.width / 2,
-            Breakout.height * 4 / 5);
+            Breakout.height * 8 / 9);
         this.paddle.setSpeed(Breakout.width / 100);
-        setInterval(this.draw.bind(this), interval);
+
+        // ボールの初期化
+        this.ball = new Ball(
+            options.ball.radius, options.ball.color);
+        this.ball.setPosition(Breakout.width / 2, Breakout.height / 2);
+
+        // 描画のためのタイマーセット
+        setInterval(this.draw.bind(this), options.interval);
 
         window.addEventListener('keydown', this.keydown.bind(this));
         window.addEventListener('keyup', this.keyup.bind(this));
@@ -51,6 +74,9 @@ class Breakout {
             this.leftKey = true;
         } else if (evt.code === 'ArrowRight' /* みぎキー */) {
             this.rightKey = true;
+        } else if (evt.code === 'Space') {
+            // debug
+            this.ball.setSpeed(5, 135);
         }
     }
 
@@ -70,6 +96,7 @@ class Breakout {
         if (this.rightKey) {
             this.paddle.moveRight();
         }
+        this.ball.draw(this.context);
         this.paddle.draw(this.context);
     }
 }
@@ -149,4 +176,116 @@ class Paddle {
             this.x -= right - Breakout.width;
         }
     }
+}
+
+class Ball {
+    constructor(radius, color) {
+        this.radius = radius;
+        this.color = color;
+        this.x = 0;
+        this.y = 0;
+        this.dx = 0;
+        this.dy = 0;
+    }
+
+    /**
+     * 位置を指定した場所へ移動する
+     * @param x
+     * @param y
+     */
+    setPosition(x, y) {
+        this.x = x;
+        this.y = y;
+    }
+
+    /**
+     * 移動速度と向きを指定する
+     * @param speed
+     * @param direction
+     */
+    setSpeed(speed, direction) {
+        const rad = direction * Math.PI / 180;
+        this.dx = Math.cos(rad) * speed;
+        this.dy = Math.sin(rad) * speed;
+    }
+
+    /**
+     * 移動のメソッド
+     */
+    move() {
+        this.x += this.dx;
+        this.y += this.dy;
+    }
+
+    /**
+     * はみ出ないように位置を調整する
+     */
+    fixPosition() {
+        // 画面左側を超えてるか判定と座標修正
+        const left = this.x - this.radius;
+        if (left < 0) {
+            this.x += Math.abs(left);
+            this.reflectionX();
+        }
+
+        // 画面上側を超えているか判定と座標修正
+        const top = this.y - this.radius;
+        if (top < 0) {
+            this.y += Math.abs(top);
+            this.reflectionY();
+        }
+
+        // 画面右側を超えているか判定と座標修正
+        const right = this.x + this.radius;
+        if (right > Breakout.width) {
+            this.x -= right - Breakout.width;
+            this.reflectionX();
+        }
+
+        // 画面下側を超えているか判定と一時的に座標修正
+        const bottom = this.y + this.radius;
+        if (bottom > Breakout.height) {
+            this.y -= bottom - Breakout.height;
+            this.reflectionY();
+        }
+    }
+
+    /**
+     * 移動スピードの左右反転
+     */
+    reflectionX() {
+        this.dx *= -1;
+    }
+
+    /**
+     * 移動スピードの上下反転
+     */
+    reflectionY() {
+        this.dy *= -1;
+    }
+
+    /**
+     * 描画処理するメソッド
+     *
+     * @param context CanvasRenderingContext2D
+     */
+    draw(context) {
+        // 移動関連
+        this.move();
+        this.fixPosition();
+
+        // 描画関連
+        context.save();
+
+        context.fillStyle = this.color;
+        context.translate(this.x, this.y);
+
+        context.beginPath();
+        context.arc(0, 0, this.radius, 0, 2 * Math.PI);
+        context.fill();
+
+        context.restore();
+    }
+
+
 }
