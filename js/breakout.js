@@ -62,6 +62,9 @@ class Breakout {
             options.ball.radius, options.ball.color);
         this.ball.setPosition(Breakout.width / 2, Breakout.height / 2);
 
+        // ボールに当たり判定してもらうおねがい
+        this.ball.addTarget(this.paddle);
+
         // 描画のためのタイマーセット
         setInterval(this.draw.bind(this), options.interval);
 
@@ -101,8 +104,30 @@ class Breakout {
     }
 }
 
-class Paddle {
+class Entity {
+    constructor() {
+        this.x = 0;
+        this.y = 0;
+        this.width = 0;
+        this.height = 0;
+    }
+
+    getCornerPoints() {
+        return [
+            {x: this.x - this.width / 2, y: this.y - this.height / 2},
+            {x: this.x + this.width / 2, y: this.y - this.height / 2},
+            {x: this.x + this.width / 2, y: this.y + this.height / 2},
+            {x: this.x - this.width / 2, y: this.y + this.height / 2}
+        ]
+    }
+
+    hit() {
+    }
+}
+
+class Paddle extends Entity {
     constructor(width, height, color) {
+        super();
         this.width = width;
         this.height = height;
         this.color = color;
@@ -186,6 +211,18 @@ class Ball {
         this.y = 0;
         this.dx = 0;
         this.dy = 0;
+        this.targetList = [];
+    }
+
+    /**
+     * 当たり判定をするリストに追加する
+     */
+    addTarget(object) {
+        if (Array.isArray(object)) {
+            this.targetList.concat(object);
+        } else {
+            this.targetList.push(object);
+        }
     }
 
     /**
@@ -215,6 +252,42 @@ class Ball {
     move() {
         this.x += this.dx;
         this.y += this.dy;
+
+        if (this.collision()) {
+            this.dy *= -1;
+        }
+    }
+
+    collision() {
+        let isCollision = false;
+        this.targetList.forEach((target) => {
+            // 角チェック
+            const points = target.getCornerPoints();
+            points.forEach((point) => {
+                const a = Math.sqrt(
+                    Math.pow(this.x - point.x, 2) + Math.pow(this.y - point.y, 2));
+                if (a <= this.radius) {
+                    isCollision = true;
+                    target.hit();
+                }
+            }, this);
+
+            // 各側面のチェック
+            const bl = this.x - this.radius;
+            const br = this.x + this.radius;
+            const bt = this.y - this.radius;
+            const bb = this.y + this.radius;
+            if (points[0].x < br && bl < points[1].x) {
+                if (points[0].y < bb && bt < points[2].y) {
+                    //console.log(bl, br, bt, bb, points[0].x, points[1].x, points[0].y, points[2].y)
+                    isCollision = true;
+                    target.hit();
+                }
+            }
+
+        }, this);
+
+        return isCollision;
     }
 
     /**
@@ -286,6 +359,4 @@ class Ball {
 
         context.restore();
     }
-
-
 }
