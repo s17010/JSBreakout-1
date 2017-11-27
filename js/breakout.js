@@ -281,6 +281,9 @@ class Ball {
         }
     }
 
+    /**
+     * 衝突判定のメソッド
+     */
     collision() {
         let isCollision = false;
         this.targetList.forEach((target) => {
@@ -311,6 +314,25 @@ class Ball {
         }, this);
 
         return isCollision;
+    }
+
+    /**
+     * 反射角度を変える(1度)
+     */
+    changeAngle(ccw = false) {
+        let theta = Math.atan(this.dy / this.dx);
+        const speed = this.dx / Math.cos(theta);
+        if (ccw) {
+            theta = Math.PI / 180;
+        } else {
+            theta += Math.PI / 180;
+        }
+        if (theta <= 0.08726646259971647 || theta >= 3.0543261909900763) {
+            // 変更なしにする
+            return;
+        }
+        this.dx = Math.cos(theta) * speed;
+        this.dy = Math.sin(theta) * speed;
     }
 
     /**
