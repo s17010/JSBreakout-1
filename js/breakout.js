@@ -35,6 +35,18 @@ class Breakout {
         return Breakout.gameHight;
     }
 
+    static get isGameOver() {
+        return Breakout._game_over === true;
+    }
+
+    static setGameOver(f) {
+        if (f instanceof Boolean) {
+            Breakout._game_over = f;
+            return;
+        }
+        Breakout._game_over = true;
+    }
+
     constructor(options) {
         // 受け取ったパラメータをプロパティに保存
         this.canvas = options.canvas;
@@ -99,7 +111,18 @@ class Breakout {
         if (this.rightKey) {
             this.paddle.moveRight();
         }
-        this.ball.draw(this.context);
+        if (Breakout.isGameOver) {
+            this.context.save();
+
+            this.context.fillStyle = "red";
+            this.context.font = "48pt Arial";
+            this.context.textAlign = "center";
+            this.context.fillText("GameOver", Breakout.width / 2, Breakout.height / 2);
+
+            this.context.restore();
+        } else {
+            this.ball.draw(this.context);
+        }
         this.paddle.draw(this.context);
     }
 }
@@ -279,8 +302,8 @@ class Ball {
             const bb = this.y + this.radius;
             if (points[0].x < br && bl < points[1].x) {
                 if (points[0].y < bb && bt < points[2].y) {
-                    //console.log(bl, br, bt, bb, points[0].x, points[1].x, points[0].y, points[2].y)
                     isCollision = true;
+                    this.y -= bb - points[0].y;
                     target.hit();
                 }
             }
@@ -316,10 +339,8 @@ class Ball {
         }
 
         // 画面下側を超えているか判定と一時的に座標修正
-        const bottom = this.y + this.radius;
-        if (bottom > Breakout.height) {
-            this.y -= bottom - Breakout.height;
-            this.reflectionY();
+        if (top > Breakout.height) {
+            Breakout.setGameOver();
         }
     }
 
