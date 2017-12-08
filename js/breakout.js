@@ -12,6 +12,10 @@ window.addEventListener('DOMContentLoaded', () => {
         ball: {
             radius: 5,
             color: 'white'      // '#FFffFF'
+        },
+        block: {
+            width: 80,
+            height: 20
         }
     });
 });
@@ -67,6 +71,11 @@ class Breakout {
             Breakout.height * 8 / 9);
         this.paddle.setSpeed(Breakout.width / 100);
 
+        // ブロックマネージャの初期化
+        this.blockManager = new BlockManager(
+            options.block.width, options.block.height);
+        this.blockManager.stage1();
+
         // ボールの初期化
         this.ball = new Ball(
             options.ball.radius, options.ball.color);
@@ -74,6 +83,7 @@ class Breakout {
 
         // ボールに当たり判定してもらうおねがい
         this.ball.addTarget(this.paddle);
+
 
         // 描画のためのタイマーセット
         setInterval(this.draw.bind(this), options.interval);
@@ -122,6 +132,7 @@ class Breakout {
             this.ball.draw(this.context);
         }
         this.paddle.draw(this.context);
+        this.blockManager.draw(this.context);
     }
 }
 
@@ -142,7 +153,7 @@ class Entity {
         ]
     }
 
-    hit() {
+    hit(ball) {
     }
 }
 
@@ -239,6 +250,67 @@ class Paddle extends Entity {
     }
 }
 
+class Block extends Entity {
+    constructor(x, y, width, height, color) {
+        super();
+        this.width = width;
+        this.height = height;
+        this.color = color;
+        this.x = x;
+        this.y = y;
+    }
+
+    /**
+     * 描画処理するメソッド
+     *
+     * @param context CanvasRenderingContext2D
+     */
+    draw(context) {
+        context.save();
+
+        context.translate(this.x, this.y);
+        context.fillStyle = this.color;
+        context.fillRect(-(this.width / 2), -(this.height / 2),
+            this.width, this.height);
+
+        context.restore();
+    }
+
+    /**
+     * ボールと当たったので消えます
+     */
+    hit(ball) {
+        ball.removeTarget(this);
+        // 描画しないようにする
+    }
+}
+
+class BlockManager {
+    constructor(baseWidth, baseHeight) {
+        this.baseWidth = baseWidth;
+        this.baseHeight = baseHeight;
+        this.blockList = [];
+    }
+
+    stage1() {
+        for (let x = 0; x < 6; x++) {
+            for (let y = 0; y < 6; y++) {
+                this.blockList.push(
+                    new Block(this.baseWidth * (x + 1)
+                        , this.baseHeight * (y + 1),
+                        this.baseWidth, this.baseHeight, "hotpink")
+                )
+            }
+        }
+    }
+
+    draw(context) {
+        this.blockList.forEach((block) => {
+            block.draw(context);
+        }, this);
+    }
+}
+
 class Ball {
     constructor(radius, color) {
         this.radius = radius;
@@ -259,6 +331,10 @@ class Ball {
         } else {
             this.targetList.push(object);
         }
+    }
+
+    removeTarget(object) {
+
     }
 
     /**
