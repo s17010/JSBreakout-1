@@ -251,11 +251,35 @@ class Paddle extends Entity {
 }
 
 class Block extends Entity {
+    static get colorSet() {
+        return [
+            ['Pink', 'Crimson'],
+            ['HotPink', 'DeepPink'],
+            ['Violet', 'Magenta'],
+            ['MediumOrchid', 'DarkOrchid'],
+            ['MediumSlateBlue', 'DarkSlateBlue'],
+            ['Blue', 'MidnightBlue'],
+            ['LightSkyBlue', 'DeepSkyBlue'],
+            ['Cyan', 'DarkCyan'],
+            ['MediumAquamarine', 'MediumSpringGreen'],
+            ['SpringGreen', 'SeaGreen'],
+            ['DarkGreen', 'LawnGreen'],
+            ['Yellow', 'Olive'],
+            ['Gold', 'DarkGoldenrod'],
+            ['Orange', 'DarkOrange'],
+            ['Coral', 'OrangeRed'],
+            ['Red', 'DarkRed'],
+        ];
+    }
+
     constructor(x, y, width, height, color) {
         super();
         this.width = width;
         this.height = height;
-        this.color = color;
+        if (color >= Block.colorSet.length) {
+            color = Block.colorSet.length - 1;
+        }
+        this.color = Block.colorSet[color];
         this.x = x;
         this.y = y;
     }
@@ -269,8 +293,12 @@ class Block extends Entity {
         context.save();
 
         context.translate(this.x, this.y);
-        context.fillStyle = this.color;
+        context.fillStyle = this.color[0];
         context.fillRect(-(this.width / 2), -(this.height / 2),
+            this.width, this.height);
+        context.lineWidth = 5;
+        context.strokeStyle = this.color[1];
+        context.strokeRect(-(this.width / 2), -(this.height / 2),
             this.width, this.height);
 
         context.restore();
@@ -293,13 +321,13 @@ class BlockManager {
     }
 
     stage1() {
-        for (let x = 0; x < 6; x++) {
+        for (let x = 0; x < 7; x++) {
             for (let y = 0; y < 6; y++) {
+                const color = parseInt(Math.random() * Block.colorSet.length);
                 this.blockList.push(
                     new Block(this.baseWidth * (x + 1)
                         , this.baseHeight * (y + 1),
-                        this.baseWidth, this.baseHeight, "hotpink")
-                )
+                        this.baseWidth, this.baseHeight, color));
             }
         }
     }
